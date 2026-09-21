@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KabarKita — Kirim Pesan ke Channel</title>
+<meta name="description" content="Meja resepsionis digital. Kirim pesan langsung ke channel Telegram kami — tanpa akun, tanpa perantara.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   01 · TOKENS
+   ═══════════════════════════════════════════════════════════ */
+:root{
+  --bg:#FBFAF8; --bg-2:#F2F0EB; --bg-3:#EDEAE3; --bg-hover:#F0EDE6;
+  --ink:#14181C; --ink-2:#4A5259; --muted:#8A9199;
+  --rule:#E5E7E9; --rule-2:#DDE0E3;
+  --blue:#1A7AB5; --blue-bright:#229ED9; --blue-dark:#0F6591;
+  --blue-light:rgba(34,158,217,0.08);
+  --dark:#0F1419; --dark-2:#1F282F;
+  --serif:'Fraunces',ui-serif,Georgia,serif;
+  --sans:'Inter',system-ui,-apple-system,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --ease-out:cubic-bezier(0.22,1,0.36,1);
+  --ease-sig:cubic-bezier(0.16,1,0.3,1);
+  --ease-hov:cubic-bezier(0.65,0,0.35,1);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   02 · RESET & BASE
+   ═══════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:15px; line-height:1.65;
+  font-feature-settings:'kern','liga','cv11';
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer;border:none;background:none}
+::selection{background:var(--blue-light);color:var(--ink)}
+
+/* ═══════════════════════════════════════════════════════════
+   03 · PAPER GRAIN OVERLAY
+   ═══════════════════════════════════════════════════════════ */
+body::after{
+  content:'';position:fixed;inset:-50%;pointer-events:none;z-index:9999;
+  opacity:0.05;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain 8s steps(6) infinite;
+}
+@keyframes grain{
+  0%,100%{transform:translate(0,0)} 16%{transform:translate(-2%,-3%)}
+  33%{transform:translate(3%,-2%)} 50%{transform:translate(-3%,2%)}
+  66%{transform:translate(2%,3%)} 83%{transform:translate(-1%,-1%)}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   04 · LAYOUT PRIMITIVES
+   ═══════════════════════════════════════════════════════════ */
+.container{max-width:1200px;margin:0 auto;padding:0 32px}
+
+/* ═══════════════════════════════════════════════════════════
+   05 · NAVBAR
+   ═══════════════════════════════════════════════════════════ */
+.navbar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(251,250,248,0.82);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--rule);
+}
+.nav-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 0;
+}
+.logo{
+  font-family:var(--serif);font-size:22px;font-weight:400;
+  letter-spacing:-0.025em;font-variation-settings:'opsz' 144;
+}
+.logo em{color:var(--blue);font-style:italic;font-weight:400}
+.nav-menu{display:flex;gap:36px;list-style:none}
+.nav-menu a{
+  font-size:13px;color:var(--ink-2);position:relative;
+  padding-bottom:2px;transition:color 0.3s var(--ease-hov);
+}
+.nav-menu a::after{
+  content:'';position:absolute;left:0;bottom:-2px;width:0;height:1px;
+  background:var(--blue);transition:width 0.4s var(--ease-hov);
+}
+.nav-menu a:hover{color:var(--ink)}
+.nav-menu a:hover::after{width:100%}
+.nav-channel{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--mono);font-size:12px;color:var(--ink-2);
+  transition:color 0.3s var(--ease-hov);
+}
+.nav-channel:hover{color:var(--blue)}
+.status-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--blue-bright);
+  box-shadow:0 0 0 0 rgba(34,158,217,0.5);
+  animation:pulse 2.4s ease-out infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(34,158,217,0.5)}
+  70%{box-shadow:0 0 0 8px rgba(34,158,217,0)}
+  100%{box-shadow:0 0 0 0 rgba(34,158,217,0)}
+}
+.nav-channel .arrow{transition:transform 0.3s var(--ease-hov)}
+.nav-channel:hover .arrow{transform:translateX(4px)}
+
+/* ═══════════════════════════════════════════════════════════
+   06 · HERO
+   ═══════════════════════════════════════════════════════════ */
+.hero{padding:128px 0 112px}
+.hero-grid{
+  display:grid;grid-template-columns:1.55fr 1fr;
+  gap:96px;align-items:start;
+}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:12px;
+  font-family:var(--mono);font-size:11px;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:36px;
+}
+.eyebrow::before{content:'';width:24px;height:1px;background:var(--blue)}
+.hero-title{
+  font-family:var(--serif);font-weight:300;
+  font-size:76px;line-height:1.02;letter-spacing:-0.03em;
+  font-variation-settings:'opsz' 144;
+  margin-bottom:36px;
+}
+.hero-title em{color:var(--blue);font-style:italic;font-weight:300}
+.hero-title .reveal-line{display:block;overflow:hidden;padding-bottom:0.04em}
+.hero-title .reveal-line>span{
+  display:inline-block;transform:translateY(110%);
+  animation:lineUp 1.1s var(--ease-out) forwards;
+}
+.hero-title .reveal-line:nth-child(2)>span{animation-delay:0.17s}
+@keyframes lineUp{to{transform:translateY(0)}}
+.hero-lede{
+  font-size:17px;line-height:1.7;color:var(--ink-2);
+  max-width:52ch;margin-bottom:44px;
+}
+.hero-cta{
+  display:inline-flex;align-items:center;gap:14px;
+  font-family:var(--mono);font-size:12px;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--ink);
+  padding-bottom:6px;border-bottom:1px solid var(--ink);
+  transition:color 0.3s var(--ease-hov),border-color 0.3s var(--ease-hov);
+}
+.hero-cta:hover{color:var(--blue);border-color:var(--blue)}
+.hero-cta .arrow{transition:transform 0.4s var(--ease-hov)}
+.hero-cta:hover .arrow{transform:translateY(4px)}
+
+/* Message preview (aside hero) */
+.preview-wrap{margin-top:8px}
+.preview-label{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:14px;
+  display:flex;align-items:center;gap:10px;
+}
+.preview-label::after{content:'';flex:1;height:1px;background:var(--rule)}
+.message-preview{
+  background:#FFFFFF;border:1px solid var(--rule);border-radius:4px;
+  padding:22px 24px;
+}
+.preview-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:16px;padding-bottom:16px;margin-bottom:18px;
+  border-bottom:1px solid var(--rule);
+  font-family:var(--mono);font-size:11.5px;
+}
+.preview-handle{color:var(--blue);font-weight:500}
+.preview-head time{color:var(--muted);font-size:11px;letter-spacing:0.06em}
+.preview-body{
+  font-size:13.5px;line-height:1.7;color:var(--ink);
+  margin-bottom:18px;
+}
+.preview-foot{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding-top:16px;border-top:1px solid var(--rule);
+  font-family:var(--mono);font-size:10.5px;
+  letter-spacing:0.06em;color:var(--muted);
+}
+.preview-foot span:last-child{color:var(--muted)}
+
+/* ═══════════════════════════════════════════════════════════
+   07 · MARQUEE STRIP
+   ═══════════════════════════════════════════════════════════ */
+.marquee-strip{
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  background:var(--bg-2);overflow:hidden;padding:16px 0;
+  mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+}
+.marquee-track{
+  display:flex;white-space:nowrap;width:max-content;
+  animation:marquee 70s linear infinite;
+  font-family:var(--mono);font-size:11.5px;
+  letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-2);
+}
+.marquee-track>span{display:inline-flex;align-items:center;padding:0 36px}
+.marquee-track>span::after{content:'◆';margin-left:36px;color:var(--blue);font-size:8px}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ═══════════════════════════════════════════════════════════
+   08 · SECTION BASE
+   ═══════════════════════════════════════════════════════════ */
+.section{padding:128px 0;border-top:1px solid var(--rule)}
+.section-head{
+  display:grid;grid-template-columns:1.3fr 1fr;gap:96px;
+  align-items:end;margin-bottom:72px;
+}
+.section-label{
+  font-family:var(--mono);font-size:11px;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:20px;
+}
+.section-title{
+  font-family:var(--serif);font-weight:300;
+  font-size:44px;line-height:1.08;letter-spacing:-0.025em;
+  font-variation-settings:'opsz' 144;
+}
+.section-title em{color:var(--blue);font-style:italic;font-weight:300}
+.section-desc{
+  font-size:15px;line-height:1.7;color:var(--ink-2);max-width:46ch;
+  padding-bottom:4px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   09 · RULES GRID (3 kolom)
+   ═══════════════════════════════════════════════════════════ */
+.rules-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  border-top:1px solid var(--rule);border-left:1px solid var(--rule);
+}
+.rule-cell{
+  border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  padding:56px 40px 48px;transition:background 0.4s var(--ease-hov);
+}
+.rule-cell:hover{background:var(--bg-2)}
+.rule-num{
+  font-family:var(--serif);font-weight:300;font-size:60px;
+  color:var(--blue);letter-spacing:-0.04em;line-height:1;
+  margin-bottom:40px;font-variation-settings:'opsz' 144;
+}
+.rule-cell h3{
+  font-family:var(--serif);font-weight:400;font-size:22px;
+  letter-spacing:-0.02em;line-height:1.2;margin-bottom:16px;
+}
+.rule-cell p{font-size:14.5px;line-height:1.7;color:var(--ink-2)}
+
+/* ═══════════════════════════════════════════════════════════
+   10 · FORM SECTION
+   ═══════════════════════════════════════════════════════════ */
+.form-grid{
+  display:grid;grid-template-columns:1.6fr 1fr;
+  gap:96px;align-items:start;
+}
+.send-form{max-width:640px}
+.form-field{margin-bottom:32px}
+.field-label{
+  display:block;font-family:var(--mono);font-size:11px;
+  letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:12px;
+}
+.field-label .opt{
+  color:var(--muted);opacity:0.65;margin-left:8px;
+  font-size:10px;letter-spacing:0.1em;
+}
+.field-input,.field-textarea{
+  width:100%;background:#FFFFFF;
+  border:1px solid var(--rule-2);border-radius:2px;
+  padding:14px 16px;font-family:var(--sans);
+  font-size:15px;color:var(--ink);outline:none;
+  transition:border-color 0.3s var(--ease-hov),box-shadow 0.3s var(--ease-hov);
+}
+.field-textarea{resize:vertical;min-height:168px;line-height:1.65}
+.field-input::placeholder,.field-textarea::placeholder{color:var(--muted)}
+.field-input:focus,.field-textarea:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px var(--blue-light);
+}
+.field-meta{
+  display:flex;justify-content:flex-end;
+  margin-top:10px;font-family:var(--mono);font-size:11px;
+  letter-spacing:0.06em;color:var(--muted);
+}
+.field-meta .counter{transition:color 0.3s}
+.field-meta .counter.over{color:#C0392B}
+
+/* Checkbox */
+.checkbox-row{
+  display:flex;align-items:flex-start;gap:12px;
+  font-size:13.5px;line-height:1.6;color:var(--ink-2);
+  margin-bottom:36px;cursor:pointer;user-select:none;
+}
+.checkbox-row input{
+  appearance:none;-webkit-appearance:none;
+  width:16px;height:16px;flex-shrink:0;margin-top:2px;
+  border:1px solid var(--rule-2);border-radius:2px;
+  background:#FFFFFF;cursor:pointer;
+  transition:background 0.25s,border-color 0.25s;
+}
+.checkbox-row input:checked{
+  background:var(--blue) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='white' d='M13.78 4.22a.75.75 0 0 1 0 1.06l-6.5 6.5a.75.75 0 0 1-1.06 0l-3-3a.75.75 0 1 1 1.06-1.06L6.75 10.19l5.97-5.97a.75.75 0 0 1 1.06 0z'/%3E%3C/svg%3E") center/11px no-repeat;
+  border-color:var(--blue);
+}
+
+/* Submit button */
+.btn-submit{
+  position:relative;width:100%;display:inline-flex;
+  align-items:center;justify-content:center;gap:12px;
+  background:var(--ink);color:#F4F1EA;
+  border-radius:2px;padding:18px 24px;
+  font-family:var(--sans);font-size:14px;font-weight:500;
+  letter-spacing:0.02em;overflow:hidden;
+  transition:color 0.35s var(--ease-hov);
+}
+.btn-submit::before{
+  content:'';position:absolute;inset:0;background:var(--blue);
+  transform:translateY(101%);
+  transition:transform 0.55s var(--ease-hov);
+}
+.btn-submit:hover:not(:disabled)::before{transform:translateY(0)}
+.btn-submit>*{position:relative;z-index:1}
+.btn-submit .arrow{transition:transform 0.4s var(--ease-hov)}
+.btn-submit:hover:not(:disabled) .arrow{transform:translateX(4px)}
+.btn-submit:disabled{cursor:wait}
+.btn-submit[data-state="sent"]{background:#1F7A4C;color:#fff}
+.btn-submit[data-state="sent"]::before{display:none}
+.btn-submit[data-state="error"]{background:#A33;color:#fff}
+.btn-submit[data-state="error"]::before{display:none}
+.btn-submit[data-state="loading"]::before{
+  display:block;transform:translateY(0);background:var(--blue-dark);
+}
+.dots{display:inline-flex;gap:4px;vertical-align:middle;margin-left:2px}
+.dots i{
+  width:3px;height:3px;border-radius:50%;background:currentColor;
+  animation:dotPulse 1.2s infinite;
+}
+.dots i:nth-child(2){animation-delay:0.2s}
+.dots i:nth-child(3){animation-delay:0.4s}
+@keyframes dotPulse{0%,60%,100%{opacity:0.2}30%{opacity:1}}
+
+/* Info panel */
+.info-header{
+  font-family:var(--mono);font-size:11px;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:24px;
+}
+.info-list{list-style:none}
+.info-list li{
+  display:flex;justify-content:space-between;align-items:baseline;
+  gap:24px;padding:20px 0;border-top:1px solid var(--rule);
+}
+.info-list li:last-child{border-bottom:1px solid var(--rule)}
+.info-key{
+  font-family:var(--mono);font-size:11px;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--muted);
+}
+.info-val{
+  font-family:var(--mono);font-size:13px;color:var(--ink);
+  letter-spacing:0.02em;
+}
+.info-note{
+  margin-top:32px;padding-top:24px;
+  border-top:1px solid var(--rule);
+  font-size:13.5px;line-height:1.7;color:var(--ink-2);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   11 · DISPATCH LOG (SIGNATURE DARK SECTION)
+   ═══════════════════════════════════════════════════════════ */
+.dispatch{
+  background:var(--dark);color:#C8D0D8;
+  padding:88px 0;border-top:1px solid var(--dark-2);
+  border-bottom:1px solid var(--dark-2);
+  position:relative;overflow:hidden;
+}
+.dispatch::before{
+  content:'';position:absolute;top:-30%;left:-10%;
+  width:50%;height:160%;
+  background:radial-gradient(circle,rgba(34,158,217,0.06) 0%,transparent 60%);
+  pointer-events:none;
+}
+.dispatch-grid{
+  display:grid;grid-template-columns:1fr 1.35fr;
+  gap:96px;align-items:start;position:relative;
+}
+.dispatch .section-label{color:#5A6672}
+.dispatch-title{
+  font-family:var(--serif);font-weight:300;font-size:40px;
+  letter-spacing:-0.025em;line-height:1.1;color:#F4F1EA;
+  margin-bottom:28px;font-variation-settings:'opsz' 144;
+}
+.dispatch-title em{color:var(--blue-bright);font-style:italic;font-weight:300}
+.dispatch-copy{font-size:15px;line-height:1.75;color:#8A9199;max-width:42ch}
+.dispatch-log{
+  font-family:var(--mono);font-size:13px;line-height:2.05;
+  border-top:1px solid var(--dark-2);padding-top:22px;
+}
+.log-head{
+  display:flex;justify-content:space-between;gap:24px;
+  color:#5A6672;margin-bottom:20px;font-size:11.5px;
+  letter-spacing:0.06em;
+}
+.log-line{display:block;color:#9AA4AE}
+.log-line .ts{color:var(--blue-bright);letter-spacing:0.02em}
+.log-line .arw{color:#5A6672;margin-right:4px}
+.log-line.ok{color:#4ADE80;margin-top:14px}
+.log-foot{
+  margin-top:22px;padding-top:20px;
+  border-top:1px solid var(--dark-2);
+  color:#5A6672;font-size:11.5px;letter-spacing:0.08em;
+}
+@supports (animation-timeline:view()){
+  .log-line{
+    opacity:0;transform:translateX(-8px);
+    animation:logIn 0.6s var(--ease-out) both;
+    animation-timeline:view();
+  }
+  .log-line:nth-child(2){animation-range:entry 20% cover 30%}
+  .log-line:nth-child(3){animation-range:entry 22% cover 32%}
+  .log-line:nth-child(4){animation-range:entry 24% cover 34%}
+  .log-line:nth-child(5){animation-range:entry 26% cover 36%}
+  .log-line:nth-child(6){animation-range:entry 28% cover 38%}
+  .log-line:nth-child(7){animation-range:entry 30% cover 40%}
+  .log-line:nth-child(8){animation-range:entry 34% cover 46%}
+  @keyframes logIn{to{opacity:1;transform:translateX(0)}}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   12 · TESTIMONIAL CARDS
+   ═══════════════════════════════════════════════════════════ */
+.testi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:32px}
+.testi-card{
+  background:#FFFFFF;border:1px solid var(--rule);border-radius:4px;
+  padding:44px 40px 36px;position:relative;
+  transition:transform 0.4s var(--ease-out);
+}
+.testi-card::before{
+  content:'';position:absolute;top:0;left:40px;
+  width:48px;height:2px;background:var(--blue);
+  transition:width 0.5s var(--ease-hov);
+}
+.testi-card:hover{transform:translateY(-2px)}
+.testi-card:hover::before{width:96px}
+.testi-meta{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:24px;
+}
+.testi-quote{
+  font-family:var(--serif);font-weight:300;font-size:19px;
+  line-height:1.4;letter-spacing:-0.015em;color:var(--ink);
+  margin-bottom:32px;font-variation-settings:'opsz' 100;
+}
+.testi-divider{border-top:1px solid var(--rule);margin-bottom:20px}
+.testi-author{
+  display:flex;justify-content:space-between;align-items:baseline;
+  gap:16px;
+}
+.testi-author strong{font-size:14px;font-weight:500;color:var(--ink)}
+.testi-author span{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:0.14em;
+  text-transform:uppercase;color:var(--muted);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   13 · FAQ
+   ═══════════════════════════════════════════════════════════ */
+.faq-list{border-top:1px solid var(--rule)}
+.faq-item{border-bottom:1px solid var(--rule)}
+.faq-item summary{
+  list-style:none;cursor:pointer;
+  padding:28px 0;display:flex;align-items:center;
+  justify-content:space-between;gap:32px;
+  font-family:var(--serif);font-weight:400;font-size:20px;
+  letter-spacing:-0.015em;color:var(--ink);
+  transition:color 0.3s var(--ease-hov);
+}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary:hover{color:var(--blue)}
+.faq-icon{
+  font-family:var(--mono);font-size:16px;font-weight:400;
+  color:var(--muted);flex-shrink:0;
+  transition:transform 0.4s var(--ease-out),color 0.3s;
+}
+.faq-item[open] .faq-icon{transform:rotate(45deg);color:var(--blue)}
+.faq-body{
+  padding:0 0 32px;max-width:72ch;
+  font-size:14.5px;line-height:1.75;color:var(--ink-2);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   14 · CTA BANNER
+   ═══════════════════════════════════════════════════════════ */
+.cta-banner{
+  background:var(--dark);border-top:1px solid var(--dark-2);
+  border-bottom:1px solid var(--dark-2);
+  padding:88px 0;position:relative;overflow:hidden;
+  color:#F4F1EA;
+}
+.cta-banner::before{
+  content:'';position:absolute;top:-40%;right:-10%;
+  width:60%;height:180%;
+  background:radial-gradient(circle,rgba(34,158,217,0.10) 0%,transparent 60%);
+  pointer-events:none;
+}
+.cta-grid{
+  display:grid;grid-template-columns:1.6fr 1fr;
+  gap:96px;align-items:center;position:relative;
+}
+.cta-title{
+  font-family:var(--serif);font-weight:300;font-size:40px;
+  line-height:1.1;letter-spacing:-0.025em;
+  font-variation-settings:'opsz' 144;
+}
+.cta-title em{color:var(--blue-bright);font-style:italic;font-weight:300}
+.btn-inverted{
+  display:inline-flex;align-items:center;gap:12px;
+  background:#F4F1EA;color:var(--ink);
+  border-radius:2px;padding:16px 28px;
+  font-size:14px;font-weight:500;letter-spacing:0.02em;
+  position:relative;overflow:hidden;
+  transition:color 0.4s var(--ease-hov);
+  justify-self:end;
+}
+.btn-inverted::before{
+  content:'';position:absolute;inset:0;background:var(--blue-bright);
+  transform:translateY(101%);
+  transition:transform 0.55s var(--ease-hov);
+}
+.btn-inverted:hover::before{transform:translateY(0)}
+.btn-inverted:hover{color:#FFFFFF}
+.btn-inverted>*{position:relative;z-index:1}
+.btn-inverted .arrow{transition:transform 0.4s var(--ease-hov)}
+.btn-inverted:hover .arrow{transform:translateX(4px)}
+
+/* ═══════════════════════════════════════════════════════════
+   15 · FOOTER
+   ═══════════════════════════════════════════════════════════ */
+.footer{
+  background:var(--bg-2);border-top:1px solid var(--rule);
+  padding:72px 0 24px;
+}
+.footer-grid{
+  display:grid;grid-template-columns:1fr 1.1fr;gap:96px;
+  padding-bottom:56px;border-bottom:1px solid var(--rule);
+  margin-bottom:24px;
+}
+.footer-brand .logo{font-size:26px;display:inline-block;margin-bottom:20px}
+.footer-brand p{font-size:14px;line-height:1.7;color:var(--ink-2);max-width:40ch}
+.footer-meta{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:28px 48px;align-content:start;
+}
+.footer-meta-item{
+  border-top:1px solid var(--rule);padding-top:16px;
+}
+.footer-meta-item .k{
+  display:block;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;
+}
+.footer-meta-item .v{
+  font-size:14px;color:var(--ink);
+}
+.footer-meta-item .v.clock{
+  font-family:var(--mono);font-size:13px;color:var(--blue);
+  letter-spacing:0.02em;font-variant-numeric:tabular-nums;
+}
+.footer-meta-item a.v{
+  display:inline-block;border-bottom:1px solid transparent;
+  transition:border-color 0.3s;
+}
+.footer-meta-item a.v:hover{border-color:var(--blue);color:var(--blue)}
+.footer-bottom{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:24px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   16 · TOAST
+   ═══════════════════════════════════════════════════════════ */
+.toast{
+  position:fixed;right:32px;bottom:32px;z-index:200;
+  display:flex;align-items:center;gap:14px;
+  max-width:400px;padding:18px 24px;
+  background:#FFFFFF;border:1px solid var(--blue);border-radius:2px;
+  font-family:var(--serif);font-size:16px;font-weight:400;
+  letter-spacing:-0.01em;color:var(--ink);
+  opacity:0;transform:translateY(20px);pointer-events:none;
+  transition:opacity 0.6s var(--ease-sig),transform 0.6s var(--ease-sig);
+}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast .check{
+  font-family:var(--mono);color:var(--blue);font-size:14px;
+  flex-shrink:0;
+}
+.toast em{color:var(--blue);font-style:italic}
+
+/* ═══════════════════════════════════════════════════════════
+   17 · SCROLL-DRIVEN REVEAL
+   ═══════════════════════════════════════════════════════════ */
+@supports (animation-timeline:view()){
+  .fade-up{
+    opacity:0;transform:translateY(16px);
+    animation:fadeUp linear both;
+    animation-timeline:view();
+    animation-range:entry 5% cover 32%;
+  }
+  @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   18 · RESPONSIVE
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width:1000px){
+  .hero-grid{grid-template-columns:1fr;gap:64px}
+  .hero-title{font-size:64px}
+  .section-head{grid-template-columns:1fr;gap:32px;align-items:start}
+  .form-grid{grid-template-columns:1fr;gap:64px}
+  .dispatch-grid{grid-template-columns:1fr;gap:48px}
+  .cta-grid{grid-template-columns:1fr;gap:32px}
+  .btn-inverted{justify-self:start}
+  .footer-grid{grid-template-columns:1fr;gap:48px}
+  .dispatch-log{overflow-x:auto}
+  .dispatch-log>*{white-space:nowrap}
+}
+@media (max-width:900px){
+  .section{padding:88px 0}
+  .hero{padding:88px 0 80px}
+  .section-title{font-size:34px}
+  .dispatch-title,.cta-title{font-size:32px}
+  .rules-grid{grid-template-columns:1fr 1fr}
+  .testi-grid{grid-template-columns:1fr}
+}
+@media (max-width:720px){
+  .container{padding:0 20px}
+  .nav-menu{display:none}
+  .hero-title{font-size:40px}
+  .hero{padding:72px 0 64px}
+  .section{padding:72px 0}
+  .section-title{font-size:28px}
+  .section-head{margin-bottom:48px}
+  .dispatch-title,.cta-title{font-size:28px}
+  .cta-banner{padding:72px 0}
+  .rules-grid{grid-template-columns:1fr}
+  .rule-cell{padding:40px 28px 36px}
+  .rule-num{font-size:48px;margin-bottom:28px}
+  .field-input,.field-textarea{padding:12px 14px;font-size:14.5px}
+  .btn-submit{padding:16px 20px}
+  .message-preview{padding:18px 18px}
+  .preview-body{font-size:12.5px}
+  .preview-head,.preview-foot{font-size:10.5px}
+  .footer-grid{gap:36px}
+  .footer-meta{gap:24px 32px}
+  .footer-bottom{flex-direction:column;align-items:flex-start;gap:10px}
+  .marquee-track{animation-duration:32s}
+  .dispatch-log{font-size:11px}
+  .testi-card{padding:36px 28px 28px}
+  .testi-card::before{left:28px}
+  .toast{right:16px;left:16px;bottom:16px;max-width:none;font-size:15px}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   19 · PREFERS-REDUCED-MOTION
+   ═══════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:0.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:0.01ms!important;
+  }
+  body::after{display:none}
+  .hero-title .reveal-line>span{transform:none}
+  .fade-up,.log-line{opacity:1!important;transform:none!important}
+  .marquee-track{animation:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ NAVBAR ═══════════════ -->
+<header class="navbar">
+  <div class="container nav-inner">
+    <a href="#" class="logo">Kabar<em>Kita</em></a>
+    <nav>
+      <ul class="nav-menu">
+        <li><a href="#aturan">Aturan</a></li>
+        <li><a href="#tulis">Tulis</a></li>
+        <li><a href="#dispatch">Proses</a></li>
+        <li><a href="#faq">Tanya</a></li>
+      </ul>
+    </nav>
+    <a href="https://t.me/kabar_kita" class="nav-channel" target="_blank" rel="noopener">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span>@kabar_kita</span>
+      <i class="fa-solid fa-arrow-right arrow" aria-hidden="true"></i>
+    </a>
+  </div>
+</header>
+
+<main>
+
+  <!-- ═══════════════ HERO ═══════════════ -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <p class="eyebrow">Meja Resepsionis — Terbuka 24 Jam</p>
+        <h1 class="hero-title">
+          <span class="reveal-line"><span>Kirim pesan ke</span></span>
+          <span class="reveal-line"><span>channel kami — <em>langsung</em>,</span></span>
+          <span class="reveal-line"><span>tanpa akun.</span></span>
+        </h1>
+        <p class="hero-lede">
+          Tidak perlu daftar. Tidak perlu verifikasi. Tulis pesan Anda,
+          dan dalam hitungan detik ia akan muncul di channel publik kami —
+          diteruskan oleh bot melalui Telegram Bot API.
+        </p>
+        <a href="#tulis" class="hero-cta">
+          Tulis Pesan
+          <span class="arrow" aria-hidden="true">↓</span>
+        </a>
+      </div>
+
+      <div class="preview-wrap">
+        <p class="preview-label">Terlihat di channel</p>
+        <aside class="message-preview" aria-label="Contoh pesan di channel">
+          <div class="preview-head">
+            <span class="preview-handle">@kabar_kita</span>
+            <time>14:32</time>
+          </div>
+          <p class="preview-body">
+            Pengumuman: server maintenance pukul 02:00 WIB.
+            Estimasi downtime 30 menit. Mohon maklum.
+          </p>
+          <div class="preview-foot">
+            <span>— dikirim oleh Ahmad</span>
+            <span>14:32 · via web</span>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ MARQUEE ═══════════════ -->
+  <div class="marquee-strip" aria-hidden="true">
+    <div class="marquee-track">
+      <span>+1.284 pesan terkirim bulan ini</span>
+      <span>@kabar_kita</span>
+      <span>median moderasi 4 jam</span>
+      <span>diperbarui tiap 30 detik</span>
+      <span>+1.284 pesan terkirim bulan ini</span>
+      <span>@kabar_kita</span>
+      <span>median moderasi 4 jam</span>
+      <span>diperbarui tiap 30 detik</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════ ATURAN ═══════════════ -->
+  <section class="section" id="aturan">
+    <div class="container">
+      <div class="section-head fade-up">
+        <div>
+          <p class="section-label">— Aturan</p>
+          <h2 class="section-title">Bagaimana pesan Anda <em>diterima</em>.</h2>
+        </div>
+        <p class="section-desc">
+          Tiga prinsip yang kami jaga di meja resepsionis ini:
+          hormat, satu pesan per orang, dan moderasi yang manusiawi.
+        </p>
+      </div>
+
+      <div class="rules-grid">
+        <article class="rule-cell">
+          <p class="rule-num">01</p>
+          <h3>Tulis dengan Hormat</h3>
+          <p>Pesan yang mengandung ujaran kebencian, ancaman, atau doxing tidak akan diteruskan. Meja ini untuk percakapan sipil.</p>
+        </article>
+        <article class="rule-cell">
+          <p class="rule-num">02</p>
+          <h3>Satu Pesan Per Orang</h3>
+          <p>Setiap pengunjung boleh mengirim maksimal satu pesan setiap 30 detik. Bukan untuk membatasi, tapi menjaga channel tetap bisa dibaca.</p>
+        </article>
+        <article class="rule-cell">
+          <p class="rule-num">03</p>
+          <h3>Moderasi 1×24 Jam</h3>
+          <p>Semua pesan ditinjau manual. Yang lolos akan tampil di channel; yang tidak, tidak akan pernah dilihat publik.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ FORMULIR ═══════════════ -->
+  <section class="section" id="tulis">
+    <div class="container">
+      <div class="section-head fade-up">
+        <div>
+          <p class="section-label">— Formulir</p>
+          <h2 class="section-title">Tulis surat <em>singkat</em> Anda.</h2>
+        </div>
+        <p class="section-desc">
+          Pesan Anda akan tampil di channel publik @kabar_kita.
+          Kami tidak menyimpan data apapun di server perantara.
+        </p>
+      </div>
+
+      <div class="form-grid">
+        <!-- FORM -->
+        <form class="send-form" id="send-form" autocomplete="off" novalidate>
+          <div class="form-field">
+            <label class="field-label" for="name">Nama</label>
+            <input class="field-input" type="text" id="name" name="name"
+                   placeholder="Nama atau inisial" maxlength="100" required>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="email">
+              Email <span class="opt">(opsional)</span>
+            </label>
+            <input class="field-input" type="email" id="email" name="email"
+                   placeholder="email@contoh.id — untuk balasan pribadi" maxlength="200">
+          </div>
+
+          <div class="form-field">
+            <label class="field-label" for="message">Pesan</label>
+            <textarea class="field-textarea" id="message" name="message"
+                      rows="6" maxlength="4200" required
+                      placeholder="Tulis pesan Anda..."></textarea>
+            <div class="field-meta">
+              <span class="counter" id="counter">0 / 4096</span>
+            </div>
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" name="consent" checked>
+            <span>Saya setuju pesan ini tampil di channel publik @kabar_kita.</span>
+          </label>
+
+          <button type="submit" class="btn-submit" id="submit-btn">
+            <span id="submit-text">Kirim Pesan</span>
+            <i class="fa-solid fa-arrow-right arrow" id="submit-arrow" aria-hidden="true"></i>
+          </button>
+        </form>
+
+        <!-- INFO PANEL -->
+        <aside class="info-panel fade-up">
+          <p class="info-header">Status</p>
+          <ul class="info-list">
+            <li>
+              <span class="info-key">Channel</span>
+              <span class="info-val">@kabar_kita</span>
+            </li>
+            <li>
+              <span class="info-key">Pesan hari ini</span>
+              <span class="info-val">47</span>
+            </li>
+            <li>
+              <span class="info-key">Median moderasi</span>
+              <span class="info-val">4 jam</span>
+            </li>
+            <li>
+              <span class="info-key">Berlaku sejak</span>
+              <span class="info-val">2023</span>
+            </li>
+          </ul>
+          <p class="info-note">
+            Tidak ada database di balik formulir ini. Pesan Anda berhenti
+            sejenak di serverless function — lalu diteruskan.
+          </p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ DISPATCH LOG ═══════════════ -->
+  <section class="dispatch" id="dispatch">
+    <div class="container dispatch-grid">
+      <div>
+        <p class="section-label">— Transparansi</p>
+        <h2 class="dispatch-title">Pesan Anda tidak <em>disimpan</em>. Ia lewat.</h2>
+        <p class="dispatch-copy">
+          Setiap pesan yang Anda kirim langsung diteruskan ke channel
+          Telegram melalui Bot API. Tidak ada cache, tidak ada backup.
+          Hanya satu perjalanan singkat dari browser Anda ke channel —
+          dan Anda bisa melihat jejaknya di sini.
+        </p>
+      </div>
+
+      <div class="dispatch-log" aria-label="Contoh log pengiriman">
+        <div class="log-head">
+          <span>dispatch.kabar_kita.id</span>
+          <span>14:32:07</span>
+        </div>
+        <span class="log-line"><span class="arw">→</span> POST /api/send</span>
+        <span class="log-line">&nbsp;&nbsp;[ 14:32:08 ] <span class="arw">▸</span> Validating payload</span>
+        <span class="log-line">&nbsp;&nbsp;[ 14:32:08 ] <span class="arw">▸</span> Escaping HTML entities</span>
+        <span class="log-line">&nbsp;&nbsp;[ 14:32:09 ] <span class="arw">▸</span> Forwarding to Telegram Bot API</span>
+        <span class="log-line">&nbsp;&nbsp;[ 14:32:10 ] <span class="arw">▸</span> Response: 200 OK</span>
+        <span class="log-line">&nbsp;&nbsp;[ 14:32:10 ] <span class="arw">▸</span> Message delivered to @kabar_kita</span>
+        <span class="log-line ok">✓ Terkirim — message_id: 18472</span>
+        <div class="log-foot">elapsed: 2.41s</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ PESAN PILIHAN ═══════════════ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head fade-up">
+        <div>
+          <p class="section-label">— Pilihan Editor</p>
+          <h2 class="section-title">Yang pernah <em>mampir</em> ke meja.</h2>
+        </div>
+        <p class="section-desc">
+          Kutipan dari pesan-pesan yang lolos moderasi dan tampil di channel
+          publik. Diringkas, disunting ringan, dan dikutip dengan izin.
+        </p>
+      </div>
+
+      <div class="testi-grid">
+        <article class="testi-card fade-up">
+          <p class="testi-meta">01 / Terkirim</p>
+          <blockquote class="testi-quote">
+            "Terima kasih sudah buka meja ini. Saya tidak punya akun Telegram,
+            tapi saya bisa kirim keluhan soal bus kota lewat sini."
+          </blockquote>
+          <div class="testi-divider"></div>
+          <div class="testi-author">
+            <strong>Sari W.</strong>
+            <span>@kabar_kita</span>
+          </div>
+        </article>
+
+        <article class="testi-card fade-up">
+          <p class="testi-meta">02 / Terkirim</p>
+          <blockquote class="testi-quote">
+            "Pesan saya muncul di channel dalam waktu kurang dari satu jam.
+            Tidak ada formulir verifikasi, tidak ada balasan otomatis."
+          </blockquote>
+          <div class="testi-divider"></div>
+          <div class="testi-author">
+            <strong>Bagas P.</strong>
+            <span>@kabar_kita</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ FAQ ═══════════════ -->
+  <section class="section" id="faq">
+    <div class="container">
+      <div class="section-head fade-up">
+        <div>
+          <p class="section-label">— Tanya</p>
+          <h2 class="section-title">Hal-hal yang sering <em>ditanyakan</em>.</h2>
+        </div>
+        <p class="section-desc">
+          Kalau jawaban tidak ada di sini, Anda bisa menuliskannya lewat
+          formulir di atas. Kami akan menjawab lewat channel.
+        </p>
+      </div>
+
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>Apakah pesan saya benar-benar tampil di channel?<span class="faq-icon">+</span></summary>
+          <div class="faq-body">
+            Ya. Setiap pesan yang lolos moderasi akan ditampilkan di channel
+            @kabar_kita. Proses moderasi maksimal 1×24 jam.
+          </div>
+        </details>
+        <details class="faq-item">
+          <summary>Data apa yang kalian simpan dari saya?<span class="faq-icon">+</span></summary>
+          <div class="faq-body">
+            Tidak ada. Formulir ini mengirim data langsung ke Telegram Bot API
+            melalui serverless function — tanpa database perantara. Nama dan
+            email hanya digunakan untuk menampilkan pengirim di channel.
+          </div>
+        </details>
+        <details class="faq-item">
+          <summary>Kenapa email opsional?<span class="faq-icon">+</span></summary>
+          <div class="faq-body">
+            Karena kami tidak butuh untuk menghubungi Anda. Kalau Anda ingin
+            dibalas secara pribadi, isi email. Kalau tidak, biarkan kosong.
+          </div>
+        </details>
+        <details class="faq-item">
+          <summary>Bagaimana jika pesan saya ditolak?<span class="faq-icon">+</span></summary>
+          <div class="faq-body">
+            Anda tidak akan menerima notifikasi. Ini disengaja — kami tidak
+            menyimpan kontak Anda. Yang ditolak tidak akan pernah dilihat
+            publik, dan tidak ada backup dimanapun.
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ CTA BANNER ═══════════════ -->
+  <section class="cta-banner">
+    <div class="container cta-grid">
+      <h2 class="cta-title">Sudah siap <em>menulis</em>?</h2>
+      <a href="#tulis" class="btn-inverted">
+        Tulis Sekarang
+        <i class="fa-solid fa-arrow-right arrow" aria-hidden="true"></i>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="logo">Kabar<em>Kita</em></a>
+        <p>
+          Meja resepsionis digital. Tempat pesan diterima dengan hormat,
+          diteruskan dengan perhitungan, dan bisa dilihat jejaknya.
+        </p>
+      </div>
+
+      <div class="footer-meta">
+        <div class="footer-meta-item">
+          <span class="k">Email</span>
+          <a href="mailto:meja@kabar_kita.id" class="v">meja@kabar_kita.id</a>
+        </div>
+        <div class="footer-meta-item">
+          <span class="k">Channel</span>
+          <a href="https://t.me/kabar_kita" class="v" target="_blank" rel="noopener">@kabar_kita</a>
+        </div>
+        <div class="footer-meta-item">
+          <span class="k">Status</span>
+          <span class="v">Bot aktif</span>
+        </div>
+        <div class="footer-meta-item">
+          <span class="k">Jam Jakarta</span>
+          <span class="v clock" id="live-clock">--:--:-- WIB</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>— 01 / 07 —</span>
+      <span>© KabarKita 2025 — Hak cipta surat pembaca</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════ TOAST ═══════════════ -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span class="check">✓</span>
+  <span>Pesan Anda <em>terkirim</em> ke @kabar_kita.</span>
+</div>
+
+<script>
+/* ═══════════════ LIVE CLOCK (Jakarta) ═══════════════ */
+(function(){
+  const el = document.getElementById('live-clock');
+  if (!el) return;
+  const fmt = new Intl.DateTimeFormat('id-ID', {
+    timeZone:'Asia/Jakarta',
+    hour:'2-digit', minute:'2-digit', second:'2-digit',
+    hour12:false
+  });
+  const tick = () => { el.textContent = fmt.format(new Date()) + ' WIB'; };
+  tick(); setInterval(tick, 1000);
+})();
+
+/* ═══════════════ CHARACTER COUNTER ═══════════════ */
+(function(){
+  const ta = document.getElementById('message');
+  const c = document.getElementById('counter');
+  if (!ta || !c) return;
+  ta.addEventListener('input', () => {
+    const n = ta.value.length;
+    c.textContent = n + ' / 4096';
+    c.classList.toggle('over', n > 4096);
+  });
+})();
+
+/* ═══════════════ FORM SUBMIT ═══════════════ */
+(function(){
+  const form = document.getElementById('send-form');
+  const btn  = document.getElementById('submit-btn');
+  const txt  = document.getElementById('submit-text');
+  const toast= document.getElementById('toast');
+  const counter = document.getElementById('counter');
+  if (!form) return;
+
+  const setState = (state, label) => {
+    btn.dataset.state = state || '';
+    txt.textContent = label;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = {
+      name: (fd.get('name') || '').toString().trim(),
+      email: (fd.get('email') || '').toString().trim(),
+      message: (fd.get('message') || '').toString().trim(),
+    };
+    if (!payload.name || !payload.message) {
+      setState('error', 'Isi nama dan pesan');
+      setTimeout(() => setState('', 'Kirim Pesan'), 2200);
+      return;
+    }
+
+    btn.disabled = true;
+    setState('loading', 'Mengirim…');
+
+    try {
+      const res  = await fetch('/api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error();
+
+      setState('sent', 'Terkirim');
+      toast.classList.add('show');
+      form.reset();
+      if (counter) counter.textContent = '0 / 4096';
+
+      setTimeout(() => toast.classList.remove('show'), 5000);
+      setTimeout(() => { setState('', 'Kirim Pesan'); btn.disabled = false; }, 4000);
+    } catch {
+      setState('error', 'Gagal — coba lagi');
+      setTimeout(() => { setState('', 'Kirim Pesan'); btn.disabled = false; }, 2600);
+    }
+  });
+})();
+</script>
+</body>
+</html>
